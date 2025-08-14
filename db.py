@@ -30,6 +30,22 @@ def add_provider(provider_id, name, type_, address, city, contact):
     conn.commit()
     conn.close()
 
+def provider_exists(provider_id, name, type_, address, city, contact):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 1 FROM providers
+        WHERE Provider_ID = %s
+          AND Name = %s
+          AND Type = %s
+          AND Address = %s
+          AND City = %s
+          AND Contact = %s
+    """, (provider_id, name, type_, address, city, contact))
+    exists = cursor.fetchone() is not None
+    conn.close()
+    return exists
+
 def update_provider(provider_id, name, type_, address, city, contact):
     conn = get_connection()
     cursor = conn.cursor()

@@ -1,65 +1,84 @@
 import streamlit as st
-from db import get_table, add_provider, update_provider, delete_provider
+from pathlib import Path
+import pandas as pd
 
-st.set_page_config(page_title="Food Donation Management", layout="wide")
-st.title("🍽 Food Donation Management System")
 
-menu = ["View Data", "Add Provider", "Update Provider", "Delete Provider", "Analysis"]
-choice = st.sidebar.selectbox("Menu", menu)
+# ---- Page Config ----
+st.set_page_config(page_title="Food Management System", layout="wide")
 
-if choice == "View Data":
-    st.subheader("Providers Table")
-    st.dataframe(get_table("providers"))
+# ---- Background Image ----
+page_bg_img = """
+<style>
+html, body, [data-testid="stAppViewContainer"] {
+    height: 100%;
+    overflow: hidden; /* Prevent scrolling */
+    margin: 0;
+}
 
-    st.subheader("Receivers Table")
-    st.dataframe(get_table("receivers"))
+[data-testid="stAppViewContainer"] {
+    background: 
+        linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), /* Dark overlay */
+        url("https://gicgrp.com/sg/website/wp-content/uploads/2021/11/Selection-of-healthy-rich-fiber-sources-vegan-food-for-cooking-812997516_1258x838-1024x683.jpeg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
 
-    st.subheader("Food Listings Table")
-    st.dataframe(get_table("food_listings"))
 
-    st.subheader("Claims Table")
-    st.dataframe(get_table("claims"))
+.title-text {
+    text-align: center;
+    color: white;
+    font-size: 3em;
+    font-weight: bold;
+    margin-top: 50px;
+    text-shadow: 2px 2px 4px #000000;
+}
+</style>
+"""
+st.markdown(page_bg_img, unsafe_allow_html=True)
 
-elif choice == "Add Provider":
-    st.subheader("Add New Provider")
-    pid = st.number_input("Provider ID", min_value=1)
-    name = st.text_input("Name")
-    type_ = st.text_input("Type")
-    address = st.text_input("Address")
-    city = st.text_input("City")
-    contact = st.text_input("Contact")
+# ---- Title ----
+st.markdown('<div class="title-text">Food Management System</div>', unsafe_allow_html=True)
 
-    if st.button("Add Provider"):
-        add_provider(pid, name, type_, address, city, contact)
-        st.success(f"Provider {name} added successfully!")
 
-elif choice == "Update Provider":
-    st.subheader("Update Provider Details")
-    pid = st.number_input("Provider ID to Update", min_value=1)
-    city = st.text_input("New City")
-    contact = st.text_input("New Contact")
 
-    if st.button("Update"):
-        update_provider(pid, city, contact)
-        st.success(f"Provider {pid} updated successfully!")
+st.markdown("""
+    <style>
+    .button-container {
+        display: flex;
+        justify-content: center;  /* Center horizontally */
+        align-items: center;      /* Center vertically if needed */
+        gap: 20px;                /* Space between buttons */
+        flex-wrap: nowrap;        /* Keep them in a single row */
+        margin-top: 30px;
+    }
+    .circular-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        font-size: 1.3em;
+        font-weight: bold;
+        border: none;
+        background-color: rgba(255, 255, 255, 0.85);
+        color: black;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        text-decoration: none; /* Remove link underline if using <a> */
+    }
+    .circular-button:hover {
+        transform: scale(1.1);
+        background-color: rgba(255, 255, 255, 1);
+    }
+    </style>
 
-elif choice == "Delete Provider":
-    st.subheader("Delete Provider")
-    pid = st.number_input("Provider ID to Delete", min_value=1)
-
-    if st.button("Delete"):
-        delete_provider(pid)
-        st.success(f"Provider {pid} deleted successfully!")
-
-elif choice == "Analysis":
-    st.subheader("📊 Analysis Dashboard")
-    df_food = get_table("food_listings")
-    st.write("### Food Quantity by Type")
-    food_type_counts = df_food.groupby("Food_Type")["Quantity"].sum().reset_index()
-    st.bar_chart(food_type_counts, x="Food_Type", y="Quantity")
-
-    st.write("### Providers by City")
-    df_providers = get_table("providers")
-    city_counts = df_providers["City"].value_counts().reset_index()
-    city_counts.columns = ["City", "Count"]
-    st.bar_chart(city_counts, x="City", y="Count")
+    <div class="button-container">
+        <a class="circular-button" href="/Providers">Providers</a>
+        <a class="circular-button" href="/Receivers">Receivers</a>
+        <a class="circular-button" href="/Claims">Claims</a>
+        <a class="circular-button" href="/Food_Listings">Food Listings</a>
+        <a class="circular-button" href="/Visualizing">Visualizing</a>
+    </div>
+""", unsafe_allow_html=True)
