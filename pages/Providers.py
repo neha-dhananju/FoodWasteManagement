@@ -1,4 +1,7 @@
 import streamlit as st
+from utils import hide_sidebar
+hide_sidebar()
+
 
 st.title("Providers Page")
 

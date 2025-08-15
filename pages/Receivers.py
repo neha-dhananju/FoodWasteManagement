@@ -1,6 +1,9 @@
 import streamlit as st
+from utils import hide_sidebar
+hide_sidebar()
 
-st.title("Existing Page")
+
+st.title("Reciever Page")
 
 # CSS for plain white buttons
 st.markdown("""
@@ -31,16 +34,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Streamlit-native buttons for navigation
-col1, col2, col3= st.columns(3)
+col1, col2 = st.columns(2)
 
 with col1:
-    if st.button("View User"):
-        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/View.py")  # Navigates to New_Provider.py
+    if st.button("New Reciever"):
+        st.switch_page("pages/New_Reciever.py")  # Navigates to New_Provider.py
 
 with col2:
-    if st.button("Update Information"):
-        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/Update.py")  # Optional: separate page
-
-with col2:
-    if st.button("Delete Information"):
-        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/Delete.py")  # Optional: separate page
+    if st.button("Existing Reciever"):
+        st.switch_page("pages/Existing_Receiver.py")  # Optional: separate page

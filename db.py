@@ -10,14 +10,7 @@ def get_connection():
         database="food_donation"
     )
 
-def provider_id_exists(provider_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM providers WHERE provider_id = %s", (provider_id,))
-    exists = cursor.fetchone() is not None
-    cursor.close()
-    conn.close()
-    return exists
+
 
 # ---- Helper: Fetch full table as DataFrame ----
 def get_table(table_name):
@@ -30,6 +23,30 @@ def get_table(table_name):
 # CRUD: Providers
 # =============================
 
+def provider_id_exists(provider_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM providers WHERE provider_id = %s", (provider_id,))
+    exists = cursor.fetchone() is not None
+    cursor.close()
+    conn.close()
+    return exists
+
+def provider_exists( name, type_, address, city, contact):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 1 FROM providers
+        WHERE Name = %s
+          AND Type = %s
+          AND Address = %s
+          AND City = %s
+          AND Contact = %s
+    """, ( name, type_, address, city, contact))
+    exists = cursor.fetchone() is not None
+    cursor.close()
+    conn.close()
+    return exists
 
 def add_provider(provider_id, name, type_, address, city, contact):
     conn = get_connection()
@@ -38,24 +55,10 @@ def add_provider(provider_id, name, type_, address, city, contact):
         INSERT INTO providers (Provider_ID, Name, Type, Address, City, Contact)
         VALUES (%s, %s, %s, %s, %s, %s)
     """, (provider_id, name, type_, address, city, contact))
+   
     conn.commit()
+    cursor.close()
     conn.close()
-
-def provider_exists(provider_id, name, type_, address, city, contact):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT 1 FROM providers
-        WHERE Provider_ID = %s
-          AND Name = %s
-          AND Type = %s
-          AND Address = %s
-          AND City = %s
-          AND Contact = %s
-    """, (provider_id, name, type_, address, city, contact))
-    exists = cursor.fetchone() is not None
-    conn.close()
-    return exists
 
 def update_provider(provider_id, name, type_, address, city, contact):
     conn = get_connection()
@@ -78,6 +81,32 @@ def delete_provider(provider_id):
 # =============================
 # CRUD: Receivers
 # =============================
+
+def reciever_id_exists(reciever_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM recievers WHERE reciever_id = %s", (reciever_id,))
+    exists = cursor.fetchone() is not None
+    cursor.close()
+    conn.close()
+    return exists
+
+def reciever_exists( name, type_, city, contact):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 1 FROM recievers
+        WHERE Name = %s
+          AND Type = %s
+          AND Address = %s
+          AND City = %s
+          AND Contact = %s
+    """, ( name, type_, city, contact))
+    exists = cursor.fetchone() is not None
+    cursor.close()
+    conn.close()
+    return exists
+
 def add_receiver(receiver_id, name, type_, city, contact):
     conn = get_connection()
     cursor = conn.cursor()

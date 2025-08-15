@@ -4,25 +4,24 @@ from db import add_provider, provider_exists,provider_id_exists # import your ba
 
 st.title("Add New Provider")
 
-with st.form("provider_form"):
-    provider_id = st.text_input("Provider ID")
+with st.form("receiver_form"):
+    receiver_id = st.text_input("Receiver ID")
     name = st.text_input("Name")
-    provider_type = st.text_input("Type")
-    address = st.text_input("Address")
+    receiver_type = st.text_input("Type")
     city = st.text_input("City")
     contact = st.text_input("Contact Number")
 
     submit = st.form_submit_button("Submit")
 
     if submit:
-        if not provider_id or not name or not provider_type or not address or not city or not contact:
+        if not receiver_id or not name or not receiver_type or not city or not contact:
             st.error("Please fill all required fields!")
-        elif provider_id_exists(provider_id):
+        elif provider_id_exists(receiver_id):
             st.error("Provider ID already taken. Please choose another ID.")
-        elif provider_exists(name, provider_type, address, city, contact):
+        elif provider_exists(name, receiver_type, city, contact):
             st.error("User already exists!")
         else:
-            add_provider(provider_id, name, provider_type, address, city, contact)
+            add_provider(receiver_id, name, receiver_type, city, contact)
             st.success(f"Provider '{name}' added successfully!")
 
             time.sleep(3)  # Show success message for 3 seconds
