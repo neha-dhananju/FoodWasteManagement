@@ -10,6 +10,15 @@ def get_connection():
         database="food_donation"
     )
 
+def provider_id_exists(provider_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM providers WHERE provider_id = %s", (provider_id,))
+    exists = cursor.fetchone() is not None
+    cursor.close()
+    conn.close()
+    return exists
+
 # ---- Helper: Fetch full table as DataFrame ----
 def get_table(table_name):
     conn = get_connection()
@@ -20,6 +29,8 @@ def get_table(table_name):
 # =============================
 # CRUD: Providers
 # =============================
+
+
 def add_provider(provider_id, name, type_, address, city, contact):
     conn = get_connection()
     cursor = conn.cursor()
