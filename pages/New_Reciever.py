@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from db import add_provider, provider_exists,provider_id_exists # import your backend functions
+from db import add_receiver, reciever_exists,reciever_id_exists # import your backend functions
 
 st.title("Add New Provider")
 
@@ -16,12 +16,12 @@ with st.form("receiver_form"):
     if submit:
         if not receiver_id or not name or not receiver_type or not city or not contact:
             st.error("Please fill all required fields!")
-        elif provider_id_exists(receiver_id):
+        elif reciever_id_exists(receiver_id):
             st.error("Provider ID already taken. Please choose another ID.")
-        elif provider_exists(name, receiver_type, city, contact):
+        elif reciever_exists(name, receiver_type, city, contact):
             st.error("User already exists!")
         else:
-            add_provider(receiver_id, name, receiver_type, city, contact)
+            add_receiver(receiver_id, name, receiver_type, city, contact)
             st.success(f"Provider '{name}' added successfully!")
 
             time.sleep(3)  # Show success message for 3 seconds

@@ -82,10 +82,10 @@ def delete_provider(provider_id):
 # CRUD: Receivers
 # =============================
 
-def reciever_id_exists(reciever_id):
+def reciever_id_exists(receiver_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM recievers WHERE reciever_id = %s", (reciever_id,))
+    cursor.execute("SELECT 1 FROM receivers WHERE receiver_id = %s", (receiver_id,))
     exists = cursor.fetchone() is not None
     cursor.close()
     conn.close()
@@ -95,7 +95,7 @@ def reciever_exists( name, type_, city, contact):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT 1 FROM recievers
+        SELECT 1 FROM receivers
         WHERE Name = %s
           AND Type = %s
           AND Address = %s
@@ -138,6 +138,26 @@ def delete_receiver(receiver_id):
 # =============================
 # CRUD: Food Listings
 # =============================
+
+def food_id_exists(food_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM food_listings WHERE Food_ID = %s", (food_id,))
+    exists = cursor.fetchone() is not None
+    cursor.close()
+    conn.close()
+    return exists
+
+def get_food_details(food_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM food_listings WHERE Food_ID = %s", (food_id,))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return result
+
+
 def add_food(food_id, food_name, quantity, expiry_date, provider_id, provider_type, location, food_type, meal_type):
     conn = get_connection()
     cursor = conn.cursor()
@@ -148,6 +168,37 @@ def add_food(food_id, food_name, quantity, expiry_date, provider_id, provider_ty
     """, (food_id, food_name, quantity, expiry_date, provider_id, provider_type, location, food_type, meal_type))
     conn.commit()
     conn.close()
+
+def get_all_foods(provider_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT Food_ID, Food_Name FROM food_listings WHERE Provider_ID = %s", (provider_id,))
+    results = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return results
+
+def get_food_by_name(food_name):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM food_listings WHERE Food_Name = %s", (food_name,))
+    results = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return results
+
+
+def get_food(provider_id, food_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT * FROM food_listings 
+        WHERE Provider_ID = %s AND Food_ID = %s
+    """, (provider_id, food_id))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return result
 
 def update_food(food_id, food_name, quantity, expiry_date, provider_id, provider_type, location, food_type, meal_type):
     conn = get_connection()
@@ -161,12 +212,17 @@ def update_food(food_id, food_name, quantity, expiry_date, provider_id, provider
     conn.commit()
     conn.close()
 
-def delete_food(food_id):
+def delete_food(provider_id, food_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM food_listings WHERE Food_ID=%s", (food_id,))
+    cursor.execute(
+        "DELETE FROM food_listings WHERE Provider_ID = %s AND Food_ID = %s",
+        (provider_id, food_id)
+    )
     conn.commit()
+    cursor.close()
     conn.close()
+
 
 # =============================
 # CRUD: Claims

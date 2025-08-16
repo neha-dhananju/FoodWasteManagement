@@ -35,12 +35,12 @@ col1, col2, col3= st.columns(3)
 
 with col1:
     if st.button("View User"):
-        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/View.py")  # Navigates to New_Provider.py
+        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/View_R.py")  # Navigates to New_Provider.py
 
 with col2:
     if st.button("Update Information"):
-        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/Update.py")  # Optional: separate page
+        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/Update_R.py")  # Optional: separate page
 
 with col2:
     if st.button("Delete Information"):
-        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/Delete.py")  # Optional: separate page
+        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/Delete_R.py")  # Optional: separate page
