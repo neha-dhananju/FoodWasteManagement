@@ -1,12 +1,13 @@
 import streamlit as st
 from pathlib import Path
 import pandas as pd
-
+from utils import hide_sidebar
 
 
 
 # ---- Page Config ----
 st.set_page_config(page_title="Food Management System", layout="wide")
+hide_sidebar()
 
 # ---- Background Image ----
 page_bg_img = """
@@ -75,6 +76,7 @@ st.markdown("""
         background-color: rgba(255, 255, 255, 1);
     }
     </style>
+
 
     <div class="button-container">
         <a class="circular-button" href="/Providers">Providers</a>

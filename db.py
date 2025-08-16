@@ -237,17 +237,16 @@ def get_next_claim_id():
     conn.close()
     return (last_id + 1) if last_id else 1  # start from 1 if table is empty
 
+
 def add_claim(receiver_id, food_id, quantity):
     conn = get_connection()
     cursor = conn.cursor()
-
     # ✅ Step 1: Check if Receiver exists
     cursor.execute("SELECT COUNT(*) FROM receivers WHERE Receiver_ID = %s", (receiver_id,))
     if cursor.fetchone()[0] == 0:
         cursor.close()
         conn.close()
         return "Error: Receiver not found!"
-
     # ✅ Step 2: Check if Food exists
     cursor.execute("SELECT Quantity FROM food_listings WHERE Food_ID = %s", (food_id,))
     food = cursor.fetchone()
@@ -255,55 +254,48 @@ def add_claim(receiver_id, food_id, quantity):
         cursor.close()
         conn.close()
         return "Error: Food item not found!"
-
     available_qty = food[0]
-
     # ✅ Step 3: Validate requested quantity
     if quantity > available_qty:
         cursor.close()
         conn.close()
         return f"Error: Only {available_qty} units available!"
-
     # ✅ Step 4: Generate next Claim ID
     claim_id = get_next_claim_id()
-
     # ✅ Step 5: Insert claim
     cursor.execute("""
         INSERT INTO claims (Claim_ID, Receiver_ID, Food_ID, Quantity, Status)
         VALUES (%s, %s, %s, %s, %s)
     """, (claim_id, receiver_id, food_id, quantity, "Pending"))
-
     # ✅ Step 6: Update available quantity in food_listings
     cursor.execute("""
         UPDATE food_listings 
         SET Quantity = Quantity - %s 
         WHERE Food_ID = %s
     """, (quantity, food_id))
-
     conn.commit()
     cursor.close()
     conn.close()
-
     return f"Claim {claim_id} added successfully! Pending approval."
+
 
 def update_claim_status(claim_id, new_status):
     conn = get_connection()
     cursor = conn.cursor()
-
     # Check if claim exists
     cursor.execute("SELECT Claim_ID FROM claims WHERE Claim_ID=%s", (claim_id,))
     if not cursor.fetchone():
         cursor.close()
         conn.close()
         return "Error: Claim not found."
-
     # Update claim
     cursor.execute("UPDATE claims SET Status=%s WHERE Claim_ID=%s", (new_status, claim_id))
     conn.commit()
     cursor.close()
     conn.close()
-
     return f"Claim {claim_id} status updated to {new_status}."
+
+
 
 def get_all_claims():
     conn = get_connection()
@@ -318,9 +310,39 @@ def get_all_claims():
     conn.close()
     return df
 
-def delete_claim(claim_id):
+def get_claims_by_receiver(receiver_id):
+    conn = get_connection()
+    query = """
+        SELECT c.Claim_ID, c.Receiver_ID, r.Name as Receiver_Name,
+               c.Food_ID, f.Food_Name, f.Quantity, c.Status
+        FROM claims c
+        JOIN receivers r ON c.Receiver_ID = r.Receiver_ID
+        JOIN food_listings f ON c.Food_ID = f.Food_ID
+        WHERE c.Receiver_ID = %s
+    """
+    df = pd.read_sql(query, conn, params=(receiver_id,))
+    conn.close()
+    return df
+
+
+def get_claim_by_id(claim_id, receiver_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT * FROM claims 
+        WHERE Claim_ID=%s AND Receiver_ID=%s
+    """, (claim_id, receiver_id))
+    claim = cursor.fetchone()
+    conn.close()
+    return claim
+
+
+def delete_claim(claim_id, receiver_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM claims WHERE Claim_ID=%s", (claim_id,))
+    cursor.execute("""
+        DELETE FROM claims 
+        WHERE Claim_ID=%s AND Receiver_ID=%s
+    """, (claim_id, receiver_id))
     conn.commit()
     conn.close()

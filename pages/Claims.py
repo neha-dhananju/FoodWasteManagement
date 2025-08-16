@@ -46,7 +46,7 @@ with col2:
 
 with col3:
     if st.button("Delete"):
-        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/Delete_Claim.py")
+        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/Delete_claim.py")
 
 with col4:
     if st.button("View"):
