@@ -8,8 +8,8 @@ if receiver_df.empty:
 
 else:
 
-    selected_id = st.selectbox("Select Provider ID to Update", receiver_df["Provider_ID"].tolist())
-    receiver = receiver_df[receiver_df["Provider_ID"] == selected_id].iloc[0]
+    selected_id = st.selectbox("Select Provider ID to Update", receiver_df["Receiver_ID"].tolist())
+    receiver = receiver_df[receiver_df["Receiver_ID"] == selected_id].iloc[0]
 
     with st.form("update_form"):
         name = st.text_input("Name", receiver["Name"])
