@@ -1,45 +1,68 @@
 import streamlit as st
-from utils import hide_sidebar
-hide_sidebar()
 
+# ---- Page Config ----
+st.set_page_config(page_title="Provider Access", layout="wide")
 
-st.title("Providers Page")
+# ---- Background Styling ----
+page_bg_img = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background: 
+        linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        url("https://images.unsplash.com/photo-1525610553991-2bede1a236e2") no-repeat center center fixed;
+    background-size: cover;
+}
 
-# CSS for plain white buttons
-st.markdown("""
-    <style>
-    .plain-button {
-        background-color: white;
-        color: black;
-        border: 2px solid black;
-        padding: 15px 30px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        margin: 10px;
-        border-radius: 5px;
-        transition: background-color 0.2s ease, transform 0.2s ease;
-    }
-    .plain-button:hover {
-        background-color: #f0f0f0;
-        transform: scale(1.05);
-    }
-    .button-container {
-        display: flex;
-        justify-content: center;
-        gap: 30px;
-        margin-top: 50px;
-    }
-    </style>
-""", unsafe_allow_html=True)
+.title-text {
+    text-align: center;
+    color: white;
+    font-size: 2.5em;
+    font-weight: bold;
+    margin-top: 50px;
+    text-shadow: 2px 2px 6px #000000;
+}
 
-# Streamlit-native buttons for navigation
-col1, col2 = st.columns(2)
+.button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-top: 50px;
+}
 
-with col1:
-    if st.button("New User"):
-        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/New_User.py")  # Navigates to New_Provider.py
+.round-button {
+    width: 250px;
+    padding: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border-radius: 30px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: black;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.3s ease;
+    text-align: center;
+}
 
-with col2:
-    if st.button("Existing User"):
-        st.switch_page("/Users/nehadhananju/Desktop/FoodWasteManagement/pages/Existing_User.py")  # Optional: separate page
+.round-button:hover {
+    transform: scale(1.05);
+    background-color: white;
+}
+</style>
+"""
+st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# ---- Title ----
+st.markdown('<div class="title-text">Provider Access</div>', unsafe_allow_html=True)
+
+# ---- Buttons ----
+st.markdown(
+    """
+    <div class="button-container">
+        <a class="round-button" href=/New_provider>🆕 New Provider</a>
+        <a class="round-button" href="#">🔑 Existing Provider</a>
+        <a class="round-button" href="/app">⬅️ Back to Home</a>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
