@@ -64,16 +64,42 @@ elif st.session_state.page == "food_listings":
 
     foods = db.get_food_with_claims(provider["Provider_ID"])
     if foods:
-        # Show table format
-       for f in foods:
-        clean_data = {k: (v if v is not None else "-") for k, v in f.items()}
-        df = pd.DataFrame(clean_data, index=[0]).T
-        df.columns = ["Details"]
+        from collections import defaultdict
+        grouped = defaultdict(list)
 
-        with st.expander(f"🍲 {f['Food_Name']} (ID: {f['Food_ID']})"):
-            st.table(df)
+        # Group by Food_ID
+        for f in foods:
+            grouped[f["Food_ID"]].append(f)
 
-            
+        for food_id, items in grouped.items():
+            food = items[0]  # main food info (same for all claims of this food)
+
+            # --- Food details ---
+            clean_data = {
+                k: (v if v is not None else "-")
+                for k, v in food.items()
+                if k not in ["Claim_ID", "Receiver_ID", "Status", "Timestamp"]
+            }
+            df = pd.DataFrame([clean_data]).T
+            df.columns = ["Details"]
+
+            with st.expander(f"🍲 {food['Food_Name']} (ID: {food_id})"):
+                st.table(df)
+
+                # --- Claims (if any) ---
+                claims_data = []
+                for f in items:
+                    if f.get("Claim_ID"):
+                        claims_data.append({
+                            "Receiver": f.get("Receiver_ID", "-"),
+                            "Status": f.get("Status", "-"),
+                            "Time": f.get("Timestamp", "-")
+                        })
+
+                if claims_data:
+                    st.write("📋 Claims:")
+                    st.table(pd.DataFrame(claims_data))
+
     else:
         st.info("No food listed yet.")
 
