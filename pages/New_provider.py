@@ -129,9 +129,9 @@ elif st.session_state.provider_step == "food":
                 meal_type = st.selectbox("Meal Type", ["Breakfast", "Lunch", "Dinner", "Snack"])
                 location = st.text_input("Pickup Location (optional)")
 
-            c1, c2 = st.columns(2)
-            back = c1.form_submit_button("⬅️ Back")
-            submit = c2.form_submit_button("✅ Submit")
+        c1, c2 = st.columns(2)
+        back = c1.form_submit_button("⬅️ Back")
+        submit = c2.form_submit_button("✅ Submit")
 
         # Handle actions after form exits
         if back:

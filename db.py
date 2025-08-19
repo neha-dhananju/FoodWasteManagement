@@ -23,6 +23,40 @@ def get_table(table_name):
 # =============================
 # CRUD: Providers
 # =============================
+def get_provider(provider_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)  # returns results as dict
+    cursor.execute("SELECT * FROM providers WHERE Provider_ID = %s", (provider_id,))
+    provider = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return provider
+
+# =============================
+# Custom Query: Receivers by Provider
+# =============================
+def get_receivers_by_provider(provider_id):
+    """
+    Fetch receivers who claimed food from a given provider,
+    along with food and claim details.
+    """
+    conn = get_connection()
+    query = """
+        SELECT r.Receiver_ID, r.Name AS Receiver_Name, r.Type, r.City AS Location, r.Contact,
+               f.Food_Name, c.Quantity AS Quantity_Claimed, f.Expiry_Date, c.Status
+        FROM claims c
+        JOIN receivers r ON c.Receiver_ID = r.Receiver_ID
+        JOIN food_listings f ON c.Food_ID = f.Food_ID
+        WHERE f.Provider_ID = %s
+    """
+    df = pd.read_sql(query, conn, params=(provider_id,))
+    conn.close()
+    return df.to_dict(orient="records")
+
+
+
+
+
 
 def provider_id_exists(provider_id):
     conn = get_connection()
@@ -159,6 +193,22 @@ def get_food_details(food_id):
     return result
 
 
+def get_food_by_provider(provider_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    query = """
+        SELECT Food_ID, Food_Name, Quantity, Expiry_Date, Provider_ID,
+               Provider_Type, Location, Food_Type, Meal_Type
+        FROM food_listings
+        WHERE Provider_ID = %s
+    """
+    cursor.execute(query, (provider_id,))
+    foods = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return foods
+
+
 def add_food(food_id, food_name, quantity, expiry_date, provider_id, provider_type, location, food_type, meal_type):
     conn = get_connection()
     cursor = conn.cursor()
@@ -187,6 +237,31 @@ def get_food_by_name(food_name):
     cursor.close()
     conn.close()
     return results
+
+def get_food_with_claims(provider_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    query = """
+        SELECT f.Food_ID, f.Food_Name, f.Quantity, f.Expiry_Date,
+               f.Location, f.Food_Type, f.Meal_Type,
+               COALESCE(r.Receiver_ID, '-') AS Receiver_ID,
+               COALESCE(r.Name, '-') AS Receiver_Name,
+               COALESCE(r.Type, '-') AS Receiver_Type,
+               COALESCE(r.City, '-') AS Receiver_Location,
+               COALESCE(r.Contact, '-') AS Receiver_Contact,
+               COALESCE(c.Status, '-') AS Claim_Status,
+               COALESCE(c.Timestamp, '-') AS Claim_Timestamp
+        FROM food_listings f
+        LEFT JOIN claims c ON f.Food_ID = c.Food_ID
+        LEFT JOIN receivers r ON c.Receiver_ID = r.Receiver_ID
+        WHERE f.Provider_ID = %s
+    """
+    cursor.execute(query, (provider_id,))
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return data
+
 
 
 def get_food(provider_id, food_id):
