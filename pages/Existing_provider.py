@@ -243,7 +243,7 @@ elif st.session_state.page == "account":
                 updated_expiry = st.date_input("Expiry Date", food["Expiry_Date"], key=f"expiry_{food['Food_ID']}")
                 updated_location = st.text_input("Location", food["Location"], key=f"loc_{food['Food_ID']}")
                 updated_food_type = st.selectbox("Food Type", ["Vegetarian", "Non-Vegetarian", "Vegan", "Other"],
-                                                 index=["Vegetarian", "Non-Vegetarian", "Vegan", "Other"].index(food["Food_Type"]),
+                                                 index=["Veg","Vegetarian", "Non-Vegetarian", "Vegan", "Other"].index(food["Food_Type"]),
                                                  key=f"type_{food['Food_ID']}")
                 updated_meal_type = st.selectbox("Meal Type", ["Breakfast", "Lunch", "Dinner", "Snack"],
                                                 index=["Breakfast", "Lunch", "Dinner", "Snack"].index(food["Meal_Type"]),

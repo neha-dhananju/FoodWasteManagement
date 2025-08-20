@@ -124,6 +124,43 @@ def delete_provider(provider_id):
 # CRUD: Receivers
 # =============================
 
+def register_receiver(receiver_id, name, receiver_type, city, contact):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Check if the receiver already exists by ID or Contact
+    cursor.execute(
+        "SELECT 1 FROM receivers WHERE Receiver_ID=%s OR Contact=%s",
+        (receiver_id, contact)
+    )
+    if cursor.fetchone():
+        conn.close()
+        return False  # Receiver already exists
+
+    # Insert a new receiver
+    query = """
+        INSERT INTO receivers (Receiver_ID, Name, Type, City, Contact)
+        VALUES (%s, %s, %s, %s, %s)
+    """
+    cursor.execute(query, (receiver_id, name, receiver_type, city, contact))
+    conn.commit()
+    conn.close()
+    return True
+
+def login_receiver(receiver_id, contact):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute(
+        "SELECT * FROM receivers WHERE Receiver_ID = %s AND Contact = %s",
+        (receiver_id, contact)
+    )
+    receiver = cursor.fetchone()
+    conn.close()
+    return receiver
+
+
+
 def reciever_id_exists(receiver_id):
     conn = get_connection()
     cursor = conn.cursor()
@@ -149,15 +186,25 @@ def reciever_exists( name, type_, city, contact):
     conn.close()
     return exists
 
-def add_receiver(receiver_id, name, type_, city, contact):
+def add_receiver(receiver_id, name, r_type, city, contact):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
+
+    # Check if receiver already exists
+    cursor.execute("SELECT * FROM receivers WHERE Receiver_ID = %s", (receiver_id,))
+    if cursor.fetchone():
+        conn.close()
+        return {"success": False, "error": "Receiver ID already exists!"}
+
+    query = """
         INSERT INTO receivers (Receiver_ID, Name, Type, City, Contact)
         VALUES (%s, %s, %s, %s, %s)
-    """, (receiver_id, name, type_, city, contact))
+    """
+    cursor.execute(query, (receiver_id, name, r_type, city, contact))
     conn.commit()
     conn.close()
+    return {"success": True}
+
 
 def update_receiver(receiver_id, name, type_, city, contact):
     conn = get_connection()
@@ -361,10 +408,84 @@ def update_food_listing(food_id, food_name, quantity, expiry_date, location, foo
     conn.close()
 
 
+def get_available_food():
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+        SELECT 
+            f.Food_ID, f.Food_Name, f.Quantity, f.Expiry_Date, f.Location,
+            f.Food_Type, f.Meal_Type,
+            p.Name AS Provider_Name, p.Contact AS Provider_Contact, p.City AS Provider_City
+        FROM food_listings f
+        JOIN providers p ON f.Provider_ID = p.Provider_ID
+        WHERE f.Quantity > 0
+        ORDER BY f.Expiry_Date ASC
+    """
+    cursor.execute(query)
+    food = cursor.fetchall()
+    conn.close()
+    return food
+
+
+
 
 # =============================
 # CRUD: Claims
 # =============================
+
+
+
+def claim_food(food_id, receiver_id, claimed_quantity):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Check available quantity
+    cursor.execute("SELECT Quantity FROM food_listings WHERE Food_ID = %s", (food_id,))
+    result = cursor.fetchone()
+    if not result:
+        conn.close()
+        return {"success": False, "message": "Food item not found."}
+
+    available_qty = result[0]
+    if claimed_quantity > available_qty:
+        conn.close()
+        return {
+            "success": False,
+            "message": f"Only {available_qty} quantity available."
+        }
+
+    # ✅ Get the last Claim_ID
+    cursor.execute("SELECT MAX(Claim_ID) FROM claims")
+    last_claim_id = cursor.fetchone()[0]
+    if last_claim_id is None:
+        new_claim_id = 1000  # First claim ID
+    else:
+        new_claim_id = last_claim_id + 1
+
+    # ✅ Insert new claim manually with new Claim_ID
+    query = """
+        INSERT INTO claims (Claim_ID, Food_ID, Receiver_ID, Claimed_Quantity, Status, Timestamp)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """
+    status = "Pending"
+    from datetime import datetime
+    timestamp = datetime.now()
+
+    cursor.execute(query, (new_claim_id, food_id, receiver_id, claimed_quantity, status, timestamp))
+
+    # ✅ Reduce available quantity
+    cursor.execute(
+        "UPDATE food_listings SET Quantity = Quantity - %s WHERE Food_ID = %s",
+        (claimed_quantity, food_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {"success": True, "message": f"Claim successful! Claim ID: {new_claim_id}"}
+
+
 def get_next_claim_id():
     conn = get_connection()
     cursor = conn.cursor()
@@ -414,6 +535,32 @@ def add_claim(receiver_id, food_id, quantity):
     cursor.close()
     conn.close()
     return f"Claim {claim_id} added successfully! Pending approval."
+
+
+def get_claim_history(receiver_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+        SELECT 
+            c.Claim_ID,
+            f.Food_Name,
+            c.Claimed_Quantity,
+            f.Quantity AS Remaining_Quantity,
+            f.Expiry_Date,
+            f.Location,
+            c.Status,
+            c.Timestamp
+        FROM claims c
+        JOIN food_listings f ON c.Food_ID = f.Food_ID
+        WHERE c.Receiver_ID = %s
+        ORDER BY c.Timestamp DESC
+    """
+    cursor.execute(query, (receiver_id,))
+    claims = cursor.fetchall()
+    conn.close()
+    return claims
+
 
 
 

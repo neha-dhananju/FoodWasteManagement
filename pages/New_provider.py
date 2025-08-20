@@ -125,7 +125,7 @@ elif st.session_state.provider_step == "food":
                 quantity = st.number_input("Quantity (servings)", min_value=0, step=1, value=0)
                 expiry = st.date_input("Expiry Date", value=date.today())
             with col2:
-                food_type = st.selectbox("Food Type", ["Veg", "Non-Veg", "Other"])
+                food_type = st.selectbox("Food Type", ["Vegetarian", "Non-Vegetarian", "Vegan", "Other"])
                 meal_type = st.selectbox("Meal Type", ["Breakfast", "Lunch", "Dinner", "Snack"])
                 location = st.text_input("Pickup Location (optional)")
 
