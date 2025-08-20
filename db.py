@@ -1,6 +1,7 @@
 import pandas as pd
 import mysql.connector
-from datetime import datetime
+from mysql.connector import Error
+from datetime import date,datetime
 
 # ---- Database Connection ----
 def get_connection():
@@ -42,8 +43,8 @@ def get_receivers_by_provider(provider_id):
     """
     conn = get_connection()
     query = """
-        SELECT r.Receiver_ID, r.Name AS Receiver_Name, r.Type, r.City AS Location, r.Contact,
-               f.Food_Name, c.Quantity AS Quantity_Claimed, f.Expiry_Date, c.Status
+        SELECT c.Claim_ID, r.Receiver_ID, r.Name AS Receiver_Name, r.Type, r.City AS Location, r.Contact,
+               f.Food_ID,f.Food_Name, f.Expiry_Date, c.Status, c.Timestamp
         FROM claims c
         JOIN receivers r ON c.Receiver_ID = r.Receiver_ID
         JOIN food_listings f ON c.Food_ID = f.Food_ID
@@ -52,10 +53,6 @@ def get_receivers_by_provider(provider_id):
     df = pd.read_sql(query, conn, params=(provider_id,))
     conn.close()
     return df.to_dict(orient="records")
-
-
-
-
 
 
 def provider_id_exists(provider_id):
@@ -84,16 +81,20 @@ def provider_exists( name, type_, address, city, contact):
     return exists
 
 def add_provider(provider_id, name, type_, address, city, contact):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO providers (Provider_ID, Name, Type, Address, City, Contact)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (provider_id, name, type_, address, city, contact))
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO providers (Provider_ID, Name, Type, Address, City, Contact)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (provider_id, name, type_, address, city, contact))
    
-    conn.commit()
-    cursor.close()
-    conn.close()
+        conn.commit()
+    except Error as e:
+        print("Error insering provider: ",e)
+    finally:
+        cursor.close()
+        conn.close()
 
 def update_provider(provider_id, name, type_, address, city, contact):
     conn = get_connection()
@@ -104,14 +105,20 @@ def update_provider(provider_id, name, type_, address, city, contact):
         WHERE Provider_ID=%s
     """, (name, type_, address, city, contact, provider_id))
     conn.commit()
+    cursor.close()
     conn.close()
+
 
 def delete_provider(provider_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM providers WHERE Provider_ID=%s", (provider_id,))
+    # Delete food listings first to avoid foreign key issues
+    cursor.execute("DELETE FROM food_listings WHERE Provider_ID = %s", (provider_id,))
+    cursor.execute("DELETE FROM providers WHERE Provider_ID = %s", (provider_id,))
     conn.commit()
+    cursor.close()
     conn.close()
+
 
 # =============================
 # CRUD: Receivers
@@ -196,13 +203,12 @@ def get_food_details(food_id):
 def get_food_by_provider(provider_id):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
-    query = """
+    cursor.execute( """
         SELECT Food_ID, Food_Name, Quantity, Expiry_Date, Provider_ID,
-               Provider_Type, Location, Food_Type, Meal_Type
+        Provider_Type, Location, Food_Type, Meal_Type
         FROM food_listings
         WHERE Provider_ID = %s
-    """
-    cursor.execute(query, (provider_id,))
+    """, (provider_id,))
     foods = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -210,15 +216,60 @@ def get_food_by_provider(provider_id):
 
 
 def add_food(food_id, food_name, quantity, expiry_date, provider_id, provider_type, location, food_type, meal_type):
+    """
+    Adds a new food listing into the database.
+    Handles duplicate IDs, foreign key issues, and commits data safely.
+    """
+    
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Convert expiry date to YYYY-MM-DD string
+        if isinstance(expiry_date, date):
+            expiry_date = expiry_date.strftime("%Y-%m-%d")
+
+        cursor.execute("""
+            INSERT INTO food_listings
+            (Food_ID, Food_Name, Quantity, Expiry_Date, Provider_ID, Provider_Type,
+             Location, Food_Type, Meal_Type)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """,(food_id, food_name, quantity, expiry_date,
+              provider_id, provider_type, location, food_type, meal_type))
+
+        conn.commit()   
+
+    except Error as e:
+        # Handle duplicate Food_ID or foreign key constraint failures
+        print("Error inserting food:", e)
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def add_food_listing(food_id, food_name, quantity, expiry_date, location, food_type, meal_type, provider_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
+
+    # Check if Food_ID already exists
+    cursor.execute("SELECT 1 FROM food_listings WHERE Food_ID = %s", (food_id,))
+    if cursor.fetchone():
+        conn.close()
+        return False  # Duplicate Food_ID
+
+    # Insert new food record with Provider_ID
+    query = """
         INSERT INTO food_listings 
-        (Food_ID, Food_Name, Quantity, Expiry_Date, Provider_ID, Provider_Type, Location, Food_Type, Meal_Type)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """, (food_id, food_name, quantity, expiry_date, provider_id, provider_type, location, food_type, meal_type))
+        (Food_ID, Food_Name, Quantity, Expiry_Date, Location, Food_Type, Meal_Type, Provider_ID)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    cursor.execute(query, (food_id, food_name, quantity, expiry_date, location, food_type, meal_type, provider_id))
     conn.commit()
     conn.close()
+    return True
+
+    
+       
 
 def get_all_foods(provider_id):
     conn = get_connection()
@@ -288,16 +339,27 @@ def update_food(food_id, food_name, quantity, expiry_date, provider_id, provider
     conn.commit()
     conn.close()
 
-def delete_food(provider_id, food_id):
+def delete_food(food_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        "DELETE FROM food_listings WHERE Provider_ID = %s AND Food_ID = %s",
-        (provider_id, food_id)
-    )
+    cursor.execute("DELETE FROM food_listings WHERE Food_ID = %s", (food_id,))
     conn.commit()
     cursor.close()
     conn.close()
+
+
+def update_food_listing(food_id, food_name, quantity, expiry_date, location, food_type, meal_type):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE food_listings
+        SET Food_Name=%s, Quantity=%s, Expiry_Date=%s, Location=%s, Food_Type=%s, Meal_Type=%s
+        WHERE Food_ID=%s
+    """, (food_name, quantity, expiry_date, location, food_type, meal_type, food_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 
 
 # =============================
@@ -354,21 +416,7 @@ def add_claim(receiver_id, food_id, quantity):
     return f"Claim {claim_id} added successfully! Pending approval."
 
 
-def update_claim_status(claim_id, new_status):
-    conn = get_connection()
-    cursor = conn.cursor()
-    # Check if claim exists
-    cursor.execute("SELECT Claim_ID FROM claims WHERE Claim_ID=%s", (claim_id,))
-    if not cursor.fetchone():
-        cursor.close()
-        conn.close()
-        return "Error: Claim not found."
-    # Update claim
-    cursor.execute("UPDATE claims SET Status=%s WHERE Claim_ID=%s", (new_status, claim_id))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return f"Claim {claim_id} status updated to {new_status}."
+
 
 
 
@@ -423,12 +471,14 @@ def delete_claim(claim_id, receiver_id):
     conn.close()
 
 def update_claim_status(claim_id, new_status, timestamp):
-    conn=get_connection()
-    cursor=conn.cursor()
-    cursor.execute( """
-    UPDATE claims 
-    SET Status = %s, Timestamp = %s
-    WHERE Claim_ID = %s
-    """),(new_status, timestamp, claim_id)
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE claims 
+        SET Status = %s, Timestamp = %s
+        WHERE Claim_ID = %s
+    """, (new_status, timestamp, claim_id))
     conn.commit()
     cursor.close()
+    conn.close()
+

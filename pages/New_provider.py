@@ -155,6 +155,8 @@ elif st.session_state.provider_step == "food":
                         food_id, food_name, quantity, expiry,
                         pd["provider_id"], pd["p_type"], location, food_type, meal_type
                     )
+            else:
+                st.info("ℹ️ Please provide both Food ID and Food Name to add food.")
 
             st.session_state.provider_step = "thankyou"
             st.rerun()

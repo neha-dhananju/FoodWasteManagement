@@ -1,6 +1,8 @@
 import streamlit as st
 import db  # your db.py
 import pandas as pd
+from datetime import datetime
+import time
 
 st.set_page_config(page_title="Provider Portal", layout="wide")
 
@@ -143,7 +145,7 @@ elif st.session_state.page == "receivers":
                 with st.expander(f"Edit Status for Claim ID: {r['Claim_ID']}"):
                     new_status = st.selectbox(
                         f"Select new status for {r['Receiver_Name']} (Claim ID: {r['Claim_ID']})",
-                        options=["Pending", "Approved", "Rejected"],
+                        options=["Pending", "Completed", "Cancelled"],
                         index=["Pending", "Approved", "Rejected"].index(r["Status"])
                     )
                     if st.button(f"Update Status - Claim ID {r['Claim_ID']}"):
@@ -154,7 +156,7 @@ elif st.session_state.page == "receivers":
                             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         )
                         st.success(f"✅ Claim ID {r['Claim_ID']} updated to {new_status}")
-                        st.experimental_rerun()
+                        st.rerun()
             else:
                 st.info(f"Claim ID {r['Claim_ID']} is already '{r['Status']}' and cannot be edited.")
 
@@ -171,15 +173,103 @@ elif st.session_state.page == "account":
     provider = st.session_state.provider
     st.subheader("⚙️ Account Settings")
 
-    st.write(f"Name: {provider['Name']}")
-    st.write(f"Type: {provider['Type']}")
-    st.write(f"Address: {provider['Address']}")
-    st.write(f"City: {provider['City']}")
-    st.write(f"Contact: {provider['Contact']}")
+    # ------------------------
+    # Show & Update Provider Details
+    # ------------------------
+    st.write("### 🏢 Provider Details")
+    with st.expander("✏️ Update Provider Details", expanded=False):
+        new_name = st.text_input("Name", provider["Name"])
+        new_type = st.selectbox("Type", ["Restaurant", "NGO", "Individual"], index=["Restaurant", "NGO", "Individual"].index(provider["Type"]))
+        new_address = st.text_input("Address", provider["Address"])
+        new_city = st.text_input("City", provider["City"])
+        new_contact = st.text_input("Contact", provider["Contact"])
 
+        if st.button("💾 Save Provider Changes"):
+            db.update_provider(provider["Provider_ID"], new_name, new_type, new_address, new_city, new_contact)
+            st.success("✅ Provider details updated successfully!")
+            provider.update({
+                "Name": new_name,
+                "Type": new_type,
+                "Address": new_address,
+                "City": new_city,
+                "Contact": new_contact
+            })
+            st.session_state.provider = provider
+
+    st.markdown("---")
+
+    # ------------------------
+    # Add New Food Listing (Google Form Style)
+    # ------------------------
+    st.write("### ➕ Add New Food Listing")
+    with st.expander("📝 Add Food", expanded=False):
+        food_id=st.text_input("Food ID")
+        food_name = st.text_input("Food Name")
+        food_quantity = st.number_input("Quantity", min_value=1, step=1)
+        expiry_date = st.date_input("Expiry Date")
+        location = st.text_input("Location", provider["City"])
+        food_type = st.selectbox("Food Type", ["Vegetarian", "Non-Vegetarian", "Vegan", "Other"])
+        meal_type = st.selectbox("Meal Type", ["Breakfast", "Lunch", "Dinner", "Snack"])
+
+        if st.button("✅ Add Food"):
+            if food_name.strip() == "":
+                st.error("⚠️ Food Name cannot be empty!")
+            else:
+                db.add_food_listing(food_id, food_name, food_quantity, expiry_date, location, food_type, meal_type,provider["Provider_ID"],)
+                st.success(f"🍽️ '{food_name}' added successfully!")
+                time.sleep(1.5)
+                st.rerun()
+
+    st.markdown("---")
+
+    # ------------------------
+    # Show Existing Food Listings
+    # ------------------------
+    st.write("### 🍽️ Your Food Listings")
+    food_listings = db.get_food_by_provider(provider["Provider_ID"])
+
+    if not food_listings:
+        st.info("You haven't added any food listings yet.")
+    else:
+        for food in food_listings:
+            with st.expander(f"📌 {food['Food_Name']} ({food['Quantity']} items)"):
+                # Show food details
+
+                # Update existing food details
+                st.write("#### ✏️ Update Food Details")
+                updated_food_id = st.number_input("Food ID", food["Food_ID"], key=f"fid_{food['Food_ID']}")
+                updated_food_name = st.text_input("Food Name", food["Food_Name"], key=f"name_{food['Food_ID']}")
+                updated_quantity = st.number_input("Quantity", min_value=1, step=1, value=food["Quantity"], key=f"qty_{food['Food_ID']}")
+                updated_expiry = st.date_input("Expiry Date", food["Expiry_Date"], key=f"expiry_{food['Food_ID']}")
+                updated_location = st.text_input("Location", food["Location"], key=f"loc_{food['Food_ID']}")
+                updated_food_type = st.selectbox("Food Type", ["Vegetarian", "Non-Vegetarian", "Vegan", "Other"],
+                                                 index=["Vegetarian", "Non-Vegetarian", "Vegan", "Other"].index(food["Food_Type"]),
+                                                 key=f"type_{food['Food_ID']}")
+                updated_meal_type = st.selectbox("Meal Type", ["Breakfast", "Lunch", "Dinner", "Snack"],
+                                                index=["Breakfast", "Lunch", "Dinner", "Snack"].index(food["Meal_Type"]),
+                                                key=f"meal_{food['Food_ID']}")
+
+                # Save updated food details
+                if st.button(f"💾 Save {food['Food_Name']} Changes", key=f"save_{food['Food_ID']}"):
+                    db.update_food_listing(food_id, updated_food_name, updated_quantity, updated_expiry,
+                                           updated_location, updated_food_type, updated_meal_type)
+                    st.success(f"✅ '{updated_food_name}' updated successfully!")
+                    st.rerun()
+
+                # Delete food listing
+                if st.button(f"🗑️ Delete {food['Food_Name']}", key=f"del_{food['Food_ID']}"):
+                    db.delete_food(food["Food_ID"])
+                    st.success(f"✅ '{food['Food_Name']}' deleted successfully!")
+                    st.experimental_rerun()
+
+    st.markdown("---")
+
+    # ------------------------
+    # Delete Provider Account
+    # ------------------------
     if st.button("❌ Delete My Account"):
         db.delete_provider(provider["Provider_ID"])
-        st.success("✅ Account deleted")
+        st.success("✅ Account deleted successfully!")
         st.session_state.provider = None
         go_to("login")
 
