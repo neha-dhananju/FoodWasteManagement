@@ -421,3 +421,14 @@ def delete_claim(claim_id, receiver_id):
     """, (claim_id, receiver_id))
     conn.commit()
     conn.close()
+
+def update_claim_status(claim_id, new_status, timestamp):
+    conn=get_connection()
+    cursor=conn.cursor()
+    cursor.execute( """
+    UPDATE claims 
+    SET Status = %s, Timestamp = %s
+    WHERE Claim_ID = %s
+    """),(new_status, timestamp, claim_id)
+    conn.commit()
+    cursor.close()

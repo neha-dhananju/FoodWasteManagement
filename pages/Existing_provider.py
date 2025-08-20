@@ -113,18 +113,58 @@ elif st.session_state.page == "receivers":
     provider = st.session_state.provider
     st.subheader("🙋 Receivers who claimed food")
 
+    # Fetch receivers and their claimed food details
     receivers = db.get_receivers_by_provider(provider["Provider_ID"])
+
     if receivers:
+        # Convert to DataFrame for better table representation
+        df = pd.DataFrame(receivers)
+
+        # Rename columns for better readability if needed
+        df = df.rename(columns={
+            "Receiver_Name": "Receiver Name",
+            "Receiver_ID": "Receiver ID",
+            "Contact": "Contact",
+            "Type": "Type",
+            "Location": "Location",
+            "Food_ID": "Food ID",
+            "Food_Name": "Food Name",
+            "Status": "Claim Status",
+            "Timestamp": "Timestamp"
+        })
+
+        st.dataframe(df, use_container_width=True)
+
+        st.markdown("### ✏️ Edit Claim Status")
+
+        # Loop through each receiver to allow status editing if pending
         for r in receivers:
-            st.write(
-                f"👤 {r['Receiver_Name']} | ID: {r['Receiver_ID']} | Contact: {r['Contact']} | Type: {r['Type']} | Location: {r['Location']}"
-            )
+            if r["Status"].lower() == "pending":
+                with st.expander(f"Edit Status for Claim ID: {r['Claim_ID']}"):
+                    new_status = st.selectbox(
+                        f"Select new status for {r['Receiver_Name']} (Claim ID: {r['Claim_ID']})",
+                        options=["Pending", "Approved", "Rejected"],
+                        index=["Pending", "Approved", "Rejected"].index(r["Status"])
+                    )
+                    if st.button(f"Update Status - Claim ID {r['Claim_ID']}"):
+                        # Update claim status and timestamp in DB
+                        db.update_claim_status(
+                            claim_id=r["Claim_ID"],
+                            new_status=new_status,
+                            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        )
+                        st.success(f"✅ Claim ID {r['Claim_ID']} updated to {new_status}")
+                        st.experimental_rerun()
+            else:
+                st.info(f"Claim ID {r['Claim_ID']} is already '{r['Status']}' and cannot be edited.")
+
     else:
         st.info("No claims yet.")
 
     st.markdown("---")
     if st.button("⬅️ Back to Dashboard"):
         go_to("dashboard")
+
 
 # --- ACCOUNT PAGE ---
 elif st.session_state.page == "account":
