@@ -1,7 +1,8 @@
 import streamlit as st
-
+from utils import hide_sidebar
 # ---- Page Config ----
 st.set_page_config(page_title="Provider Access", layout="wide")
+hide_sidebar()
 
 # ---- Background Styling ----
 page_bg_img = """

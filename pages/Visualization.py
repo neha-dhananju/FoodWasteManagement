@@ -61,17 +61,21 @@ selected_chart = st.selectbox("Select a chart type:", chart_types)
 # ---- Special Parameter Handling ----
 params = {}
 if selected_query == "Provider contacts in a specific city":
-    params["city"] = st.text_input("Enter city name:")
+    city_name = st.text_input("Enter city name:")
 
 if st.button("Show Visualization"):
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Fetch data
-    if params:
-        cursor.execute(query_mapping[selected_query](**params))
+    query = query_mapping[selected_query]()  # call function without params
+
+    # Execute with or without parameters
+    if selected_query == "Provider contacts in a specific city" and city_name:
+        cursor.execute(query, (city_name,))
     else:
-        cursor.execute(query_mapping[selected_query]())
+        cursor.execute(query)
+
+   
 
     data = cursor.fetchall()
     columns = [desc[0] for desc in cursor.description]

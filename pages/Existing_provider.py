@@ -3,8 +3,10 @@ import db  # your db.py
 import pandas as pd
 from datetime import datetime
 import time
+from utils import hide_sidebar
 
 st.set_page_config(page_title="Provider Portal", layout="wide")
+hide_sidebar()
 
 # --- SESSION STATE INIT ---
 if "page" not in st.session_state:
@@ -17,9 +19,15 @@ def go_to(page):
     st.session_state.page = page
     st.rerun()   # 🔑 ensures no double-click needed
 
+
 # --- LOGIN PAGE ---
+
+
 if st.session_state.page == "login":
     st.title("🔑 Provider Login")
+
+    
+
 
     provider_id = st.text_input("Provider ID")
     contact = st.text_input("Contact Number")
@@ -33,6 +41,10 @@ if st.session_state.page == "login":
         else:
             st.session_state.provider = provider
             go_to("dashboard")
+
+    if st.button("⬅️ Back to Home"):
+        st.switch_page("pages/Providers.py")  # replace with the actual page name
+
 
 # --- DASHBOARD ---
 elif st.session_state.page == "dashboard":
@@ -179,13 +191,33 @@ elif st.session_state.page == "account":
     st.write("### 🏢 Provider Details")
     with st.expander("✏️ Update Provider Details", expanded=False):
         new_name = st.text_input("Name", provider["Name"])
-        new_type = st.selectbox("Type", ["Restaurant", "Supermarket", "Grocery Store", "Catering Service", "Other"], index=["Restaurant", "Supermarket", "Grocery Store", "Catering Service", "Other"].index(provider["Type"]))
+        # --- Provider Type selectbox with "Other" handling ---
+        provider_types = ["Restaurant", "Supermarket", "Grocery Store", "Catering Service", "Other"]
+        saved_type = provider["Type"]
+
+        if saved_type in provider_types:
+            type_index = provider_types.index(saved_type)
+            other_value = ""
+        else:
+            type_index = provider_types.index("Other")
+            other_value = saved_type  # prefill text input
+
+        new_type = st.selectbox("Type", provider_types, index=type_index)
+
+# Show text input only if "Other" is selected
+        if new_type == "Other":
+            other_type_input = st.text_input("If Other, please specify", value=other_value)
+            final_type = other_type_input.strip() if other_type_input else "Other"
+        else:
+            final_type = new_type
+
+        
         new_address = st.text_input("Address", provider["Address"])
         new_city = st.text_input("City", provider["City"])
         new_contact = st.text_input("Contact", provider["Contact"])
 
         if st.button("💾 Save Provider Changes"):
-            db.update_provider(provider["Provider_ID"], new_name, new_type, new_address, new_city, new_contact)
+            db.update_provider(provider["Provider_ID"], new_name, final_type, new_address, new_city, new_contact)
             st.success("✅ Provider details updated successfully!")
             provider.update({
                 "Name": new_name,
@@ -214,6 +246,9 @@ elif st.session_state.page == "account":
         if st.button("✅ Add Food"):
             if food_name.strip() == "":
                 st.error("⚠️ Food Name cannot be empty!")
+            elif not food_id.isdigit():
+                    st.error("⚠️ Food ID must contain digits only!")
+                    st.stop()
             else:
                 result=db.add_food_listing(food_id, food_name, food_quantity, expiry_date, location, food_type, meal_type,provider["Provider_ID"],)
                 if result["success"]:
@@ -242,11 +277,11 @@ elif st.session_state.page == "account":
                 st.write("#### ✏️ Update Food Details")
                 updated_food_id = st.number_input("Food ID", food["Food_ID"], key=f"fid_{food['Food_ID']}")
                 updated_food_name = st.text_input("Food Name", food["Food_Name"], key=f"name_{food['Food_ID']}")
-                updated_quantity = st.number_input("Quantity", min_value=1, step=1, value=food["Quantity"], key=f"qty_{food['Food_ID']}")
+                updated_quantity = st.number_input("Quantity", min_value=0, step=1, value=food["Quantity"], key=f"qty_{food['Food_ID']}")
                 updated_expiry = st.date_input("Expiry Date", food["Expiry_Date"], key=f"expiry_{food['Food_ID']}")
                 updated_location = st.text_input("Location", food["Location"], key=f"loc_{food['Food_ID']}")
                 updated_food_type = st.selectbox("Food Type", ["Vegetarian", "Non-Vegetarian", "Vegan", "Other"],
-                                                 index=["Veg","Vegetarian", "Non-Vegetarian", "Vegan", "Other"].index(food["Food_Type"]),
+                                                 index=["Vegetarian", "Non-Vegetarian", "Vegan", "Other"].index(food["Food_Type"]),
                                                  key=f"type_{food['Food_ID']}")
                 updated_meal_type = st.selectbox("Meal Type", ["Breakfast", "Lunch", "Dinner", "Snack"],
                                                 index=["Breakfast", "Lunch", "Dinner", "Snack"].index(food["Meal_Type"]),
@@ -254,7 +289,7 @@ elif st.session_state.page == "account":
 
                 # Save updated food details
                 if st.button(f"💾 Save {food['Food_Name']} Changes", key=f"save_{food['Food_ID']}"):
-                    db.update_food_listing(food_id, updated_food_name, updated_quantity, updated_expiry,
+                    db.update_food_listing(food["Food_ID"], updated_food_name, updated_quantity, updated_expiry,
                                            updated_location, updated_food_type, updated_meal_type)
                     st.success(f"✅ '{updated_food_name}' updated successfully!")
                     st.rerun()

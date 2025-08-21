@@ -1,9 +1,11 @@
 import streamlit as st
 from datetime import date
+from utils import hide_sidebar
 import db
-
+import re
 # ---- Page Config ----
 st.set_page_config(page_title="New Provider", layout="wide")
+hide_sidebar()
 
 # ---- Plain White Background + Card ----
 st.markdown("""
@@ -40,7 +42,7 @@ def go_providers_home():
 
 def go_existing_login():
     try:
-        st.switch_page("pages/2_Existing_Provider.py")
+        st.switch_page("pages/Existing_provider.py")
     except Exception:
         st.info("Use the sidebar to open **Existing Provider**.")
 
@@ -57,8 +59,15 @@ if st.session_state.provider_step == "provider":
         with st.form("provider_form", clear_on_submit=False):
             col_a, col_b = st.columns(2)
             with col_a:
+                if "provider_id_input" not in st.session_state:
+                    st.session_state.provider_id_input = st.session_state.provider_data.get("provider_id", "")
                 provider_id = st.text_input("Provider ID *",
-                    value=st.session_state.provider_data.get("provider_id", ""))
+                    value=re.sub(r'\D', '', st.session_state.provider_id_input),key="provider_id_input",
+                    placeholder="Digits only (0–9)")
+                provider_id_error = bool(provider_id and not provider_id.isdigit())
+                if provider_id_error:
+                    st.error("Please enter digits only (0–9).")
+
                 name = st.text_input("Name *",
                     value=st.session_state.provider_data.get("name", ""))
                 p_type = st.selectbox(
@@ -70,6 +79,10 @@ if st.session_state.provider_step == "provider":
                         if st.session_state.provider_data.get("p_type") else 0
                     ),
                 )
+                other_type = ""
+                if p_type == "Other":
+                    other_type = st.text_input("Please specify provider type *")
+           
             with col_b:
                 address = st.text_area("Address *",
                     value=st.session_state.provider_data.get("address", ""))
@@ -88,20 +101,26 @@ if st.session_state.provider_step == "provider":
 
         if next_btn:
             # Required-field check
-            if not all([provider_id.strip(), name.strip(), p_type.strip(),
-                        address.strip(), city.strip(), contact.strip()]):
-                st.error("Please fill all required fields (*)")
+            provider_id = st.session_state.provider_id_input
+
+            if not provider_id.isdigit():
+                st.error("⚠️ Provider ID must contain digits only!")
+            elif not all([provider_id.strip(), name.strip(), p_type.strip(),
+                address.strip(), city.strip(), contact.strip()]):
+                st.error("⚠️ Please fill all required fields (*)")
+            elif p_type == "Other" and not other_type.strip():
+                st.error("⚠️ Please specify the provider type when selecting 'Other'.")
             elif db.provider_id_exists(provider_id):
-                st.error("Provider ID already exists. Choose another.")
+                st.error("⚠️ Provider ID already exists. Choose another.")
             else:
-                # Stash values & move to next step
+                final_p_type = other_type if p_type == "Other" else p_type
                 st.session_state.provider_data = {
-                    "provider_id": provider_id,
-                    "name": name,
-                    "p_type": p_type,
-                    "address": address,
-                    "city": city,
-                    "contact": contact,
+                "provider_id": provider_id,
+                "name": name,
+                "p_type": final_p_type,
+                "address": address,
+                "city": city,
+                "contact": contact,
                 }
                 st.session_state.provider_step = "food"
                 st.rerun()
@@ -145,18 +164,29 @@ elif st.session_state.provider_step == "food":
             if not db.provider_id_exists(pd["provider_id"]):
                 db.add_provider(pd["provider_id"], pd["name"], pd["p_type"],
                                 pd["address"], pd["city"], pd["contact"])
+            
 
             # 2) Optionally save food if minimal fields provided
-            if food_id and food_name:
-                if db.food_id_exists(food_id):
-                    st.warning("Food ID already exists — skipping food save.")
+            if food_id or food_name:
+                if not food_id:
+                    st.error("⚠️ Please provide a Food ID.")
+                    st.stop()  # stop submission
+                elif not food_id.isdigit():
+                    st.error("⚠️ Food ID must contain digits only!")
+                    st.stop()
+                elif db.food_id_exists(food_id):
+                    st.error("Food ID already exists — skipping food save.")
+                    st.stop()
+                elif not food_name.strip():
+                    st.error("⚠️ Food Name cannot be empty!")
+                    st.stop()
                 else:
                     db.add_food(
                         food_id, food_name, quantity, expiry,
                         pd["provider_id"], pd["p_type"], location, food_type, meal_type
                     )
-            else:
-                st.info("ℹ️ Please provide both Food ID and Food Name to add food.")
+            elif not food_id and not food_name:
+                st.info("ℹ️ No food added. Only provider details submitted.")
 
             st.session_state.provider_step = "thankyou"
             st.rerun()
@@ -167,7 +197,6 @@ elif st.session_state.provider_step == "food":
 # STEP 3 — THANK YOU
 # =========================================
 elif st.session_state.provider_step == "thankyou":
-    st.markdown('<div class="form-card">', unsafe_allow_html=True)
     st.success("🎉 Thank you for filling the form!")
     st.write("You can **view or update** your information by logging in.")
 

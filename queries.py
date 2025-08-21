@@ -14,7 +14,7 @@ def get_connection():
 def get_providers_and_receivers_per_city():
     query = """
         SELECT 
-            city,
+            cities.City AS city,
             COUNT(DISTINCT providers.Provider_ID) AS total_providers,
             COUNT(DISTINCT receivers.Receiver_ID) AS total_receivers
         FROM 
@@ -25,8 +25,8 @@ def get_providers_and_receivers_per_city():
             ) AS cities
         LEFT JOIN providers ON providers.City = cities.City
         LEFT JOIN receivers ON receivers.City = cities.City
-        GROUP BY city
-        ORDER BY city;
+        GROUP BY cities.City
+        ORDER BY cities.City;
     """
     return query
 
@@ -38,7 +38,7 @@ def get_top_contributing_provider_type():
     query = """
         SELECT 
             p.Type AS provider_type,
-            SUM(f.Food_Quantity) AS total_food_contributed
+            SUM(f.Quantity) AS total_food_contributed
         FROM 
             providers p
         JOIN 
@@ -48,7 +48,7 @@ def get_top_contributing_provider_type():
             p.Type
         ORDER BY 
             total_food_contributed DESC
-        LIMIT 1;
+        
     """
     return query
 
