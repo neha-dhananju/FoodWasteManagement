@@ -11,7 +11,7 @@ def get_connection():
     )
 
 ## How many food providers and receivers are there in each city?
-def get_providers_and_receivers_per_city():
+def get_providers_and_receivers_per_city():  #table ,heatmap,double bar chart
     query = """
         SELECT 
             cities.City AS city,
@@ -34,7 +34,7 @@ def get_providers_and_receivers_per_city():
 
 ## Which type of food provider (restaurant, grocery store, etc.) contributes the most food?
 
-def get_top_contributing_provider_type():
+def get_top_contributing_provider_type(): #table , bar chart , pie chart , line chart
     query = """
         SELECT 
             p.Type AS provider_type,
@@ -55,7 +55,7 @@ def get_top_contributing_provider_type():
 
 
 ## What is the contact information of food providers in a specific city?
-def get_providers_contact_by_city():
+def get_providers_contact_by_city(): #table
     query = """
         SELECT 
             Name AS provider_name,
@@ -71,13 +71,11 @@ def get_providers_contact_by_city():
 
 
 ## Which receivers have claimed the most food?
-def get_top_receivers_by_claims():
+def get_top_receivers_by_claims():  #table ,bar chart & line chart(with reciver name & total claim),
     query = """
         SELECT 
             r.Receiver_ID,
             r.Name AS receiver_name,
-            r.City,
-            r.Contact,
             SUM(c.Claimed_Quantity) AS total_claimed
         FROM 
             claims c
@@ -93,10 +91,10 @@ def get_top_receivers_by_claims():
 
 ## What is the total quantity of food available from all providers?
 
-def get_total_available_food():
+def get_total_available_food():  #table,
     query = """
         SELECT 
-            SUM(Available_Quantity) AS total_available_food
+            SUM(Quantity) AS total_available_food
         FROM 
             food_listings;
     """
@@ -104,7 +102,7 @@ def get_total_available_food():
 
 
 ## Which city has the highest number of food listings?
-def get_city_with_highest_food_listings():
+def get_city_with_highest_food_listings():  #table , bar chart , pie chart , (all charts)
     query = """
         SELECT 
             Location AS city,
@@ -121,7 +119,7 @@ def get_city_with_highest_food_listings():
 
 
 ## What are the most commonly available food types?
-def get_most_common_food_types():
+def get_most_common_food_types():  #table , bar chart ,pie chart , line chart ,(all charts )
     query = """
         SELECT 
             Food_Type,
@@ -136,7 +134,7 @@ def get_most_common_food_types():
     return query
 
 ## How many food claims have been made for each food item?
-def get_food_claims_per_item():
+def get_food_claims_per_item(): # table ,double bar chart ,line chart
     query = """
         SELECT 
             fl.Food_ID,
@@ -157,7 +155,7 @@ def get_food_claims_per_item():
 
 
 ## Which provider has had the highest number of successful food claims?
-def get_top_successful_provider():
+def get_top_successful_provider(): #Table 
     query = """
         SELECT 
             p.Provider_ID,
@@ -172,7 +170,7 @@ def get_top_successful_provider():
             providers AS p
             ON fl.Provider_ID = p.Provider_ID
         WHERE 
-            c.Status = 'Successful'
+            c.Status = 'Completed'
         GROUP BY 
             p.Provider_ID, p.Name
         ORDER BY 
@@ -183,7 +181,7 @@ def get_top_successful_provider():
 
 
 ##  What percentage of food claims are completed vs. pending vs. canceled?
-def get_claim_status_percentage():
+def get_claim_status_percentage(): #table ,double barchart,line chart , pie chart , 
     query = """
         SELECT 
             Status,
@@ -199,7 +197,7 @@ def get_claim_status_percentage():
 
 
 ##  What is the average quantity of food claimed per receiver?
-def get_avg_claimed_quantity_per_receiver():
+def get_avg_claimed_quantity_per_receiver():  #table ,double bar chart
     query = """
         SELECT 
             r.Receiver_ID,
@@ -217,7 +215,7 @@ def get_avg_claimed_quantity_per_receiver():
     return query
 
 ## Which meal type (breakfast, lunch, dinner, snacks) is claimed the most?
-def get_most_claimed_meal_type():
+def get_most_claimed_meal_type(): #other than heatmap
     query = """
         SELECT 
             f.Meal_Type,
@@ -236,7 +234,7 @@ def get_most_claimed_meal_type():
 
 
 ## What is the total quantity of food donated by each provider?
-def get_total_donated_by_provider():
+def get_total_donated_by_provider(): #table ,double bar chart 
     query = """
         SELECT 
             p.Provider_ID,

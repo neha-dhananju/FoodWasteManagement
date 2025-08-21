@@ -90,19 +90,31 @@ page_bg_img = """
 st.markdown(page_bg_img, unsafe_allow_html=True)
 
 # ---- Hero Section ----
-st.markdown('<div class="title-text">Food Management System</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle-text">Are you a Provider or Receiver?</div>', unsafe_allow_html=True)
+st.markdown('<div class="title-text">Food Waste Management System</div>', unsafe_allow_html=True)
+
 
 st.markdown("""
 <div class="role-container">
     <a class="role-button" href="/Providers">Provider</a>
     <a class="role-button" href="/Receivers">Receiver</a>
-    <a class="role-button" href="/Visualization">📊 Data Visualization</a>
+    <a class="role-button" href="/Visualization">Visualization</a>
 </div>
 """, unsafe_allow_html=True)
 
 # ---- Scrollable Sections ----
 st.markdown("""
+<div class="section">
+    <div class="section-text">
+        <h2>🎯 Objective </h2>
+        <p>The main goal is to build a transparent and easy-to-use platform where food donations 
+        can be listed, claimed, and tracked. By using digital technology, we aim to simplify the 
+        process of sharing surplus food and ensure it reaches the right people at the right time.</p>
+    </div>
+    <div class="section-img">
+        <img src="https://cdn-icons-png.flaticon.com/512/747/747310.png" alt="Goal">
+    </div>
+</div>
+
 <div class="section">
     <div class="section-text">
         <h2>📌 Use Case</h2>
@@ -115,17 +127,6 @@ st.markdown("""
     </div>
 </div>
 
-<div class="section">
-    <div class="section-text">
-        <h2>🎯 Goal of the Project</h2>
-        <p>The main goal is to build a transparent and easy-to-use platform where food donations 
-        can be listed, claimed, and tracked. By using digital technology, we aim to simplify the 
-        process of sharing surplus food and ensure it reaches the right people at the right time.</p>
-    </div>
-    <div class="section-img">
-        <img src="https://cdn-icons-png.flaticon.com/512/747/747310.png" alt="Goal">
-    </div>
-</div>
 
 <div class="section">
     <div class="section-text">

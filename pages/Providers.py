@@ -10,7 +10,7 @@ page_bg_img = """
 [data-testid="stAppViewContainer"] {
     background: 
         linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
-        url("https://images.unsplash.com/photo-1525610553991-2bede1a236e2") no-repeat center center fixed;
+        url("https://c8.alamy.com/comp/2J982WC/online-fast-food-order-and-address-delivery-from-restaurant-cartoon-hand-holding-phone-with-mobile-app-buying-take-away-meals-for-dinner-or-lunch-flat-vector-illustration-catering-service-concept-2J982WC.jpg") no-repeat center center fixed;
     background-size: cover;
 }
 

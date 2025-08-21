@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import mysql.connector
 import matplotlib.pyplot as plt
+import seaborn as sns
 import altair as alt
 from queries import (
     get_providers_and_receivers_per_city,
@@ -24,12 +25,13 @@ from utils import hide_sidebar
 st.set_page_config(page_title="Food Management System", layout="wide")
 hide_sidebar()
 
+
 # ---- MySQL Connection ----
 def get_connection():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        password="root1234",  # replace with your DB password
+        password="root1234",
         database="food_donation"
     )
 
@@ -50,16 +52,36 @@ query_mapping = {
     "Total quantity donated by each provider": get_total_donated_by_provider,
 }
 
-chart_types = ["Table", "Bar Chart", "Pie Chart", "Line Chart"]
+chart_options={
+     "Food providers and receivers in each city": ["Table","Heatmap"],
+    "Provider type contributing the most food": ["Table","Pie chart"],
+    "Provider contacts in a specific city": ["Table"],
+    "Receivers with the most food claims": ["Table"],
+    "Total quantity of food available": ["Table"],
+    "City with the highest number of food listings": ["Table","Seaborn Bar chart","Line chart","Heatmap"],
+    "Most commonly available food types":  ["Table","Seaborn Bar chart","Line chart","Heatmap","Pie chart"] ,
+    "Number of claims per food item": ["Table"],
+    "Provider with highest successful claims": ["Table"],
+    "Percentage of claims completed/pending/canceled": ["Table","Pie chart"],
+    "Average quantity claimed per receiver": ["Table"],
+    "Most claimed meal type":["Table","Seaborn Bar chart","Line chart" ,"Bar chart","Pie chart"],
+    "Total quantity donated by each provider": ["Table"],
+
+}
+
+chart_types = ["Table", "Bar Chart", "Pie Chart", "Line Chart", "Seaborn Bar Chart", "Seaborn Heatmap"]
 
 # ---- Visualization Section ----
-st.markdown("<h1 style='text-align: center; color: white;'>📊 Data Visualization</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: black;'> Data Visualization</h1>", unsafe_allow_html=True)
 
 selected_query = st.selectbox("Select a query to visualize:", list(query_mapping.keys()))
-selected_chart = st.selectbox("Select a chart type:", chart_types)
+
+# Get allowed charts for this query
+allowed_charts = chart_options.get(selected_query, ["Table"])  # default to Table
+selected_chart = st.selectbox("Select a chart type:", allowed_charts)
 
 # ---- Special Parameter Handling ----
-params = {}
+params = {} 
 if selected_query == "Provider contacts in a specific city":
     city_name = st.text_input("Enter city name:")
 
@@ -67,15 +89,13 @@ if st.button("Show Visualization"):
     conn = get_connection()
     cursor = conn.cursor()
 
-    query = query_mapping[selected_query]()  # call function without params
+    query = query_mapping[selected_query]()  # get query string
 
     # Execute with or without parameters
     if selected_query == "Provider contacts in a specific city" and city_name:
         cursor.execute(query, (city_name,))
     else:
         cursor.execute(query)
-
-   
 
     data = cursor.fetchall()
     columns = [desc[0] for desc in cursor.description]
@@ -87,24 +107,38 @@ if st.button("Show Visualization"):
     if df.empty:
         st.warning("⚠️ No data found for this query.")
     else:
+        # Automatically select a default chart for some queries
+
         if selected_chart == "Table":
             st.dataframe(df)
-        elif selected_chart == "Bar Chart":
+        elif selected_chart == "Bar chart":
             chart = alt.Chart(df).mark_bar().encode(
                 x=alt.X(df.columns[0], sort=None),
                 y=df.columns[1]
             )
             st.altair_chart(chart, use_container_width=True)
-        elif selected_chart == "Pie Chart":
-            fig, ax = plt.subplots()
-            ax.pie(df.iloc[:, 1], labels=df.iloc[:, 0], autopct="%1.1f%%")
-            ax.axis("equal")
-            st.pyplot(fig)
-        elif selected_chart == "Line Chart":
+        elif selected_chart == "Line chart":
             chart = alt.Chart(df).mark_line(point=True).encode(
                 x=alt.X(df.columns[0], sort=None),
                 y=df.columns[1]
             )
             st.altair_chart(chart, use_container_width=True)
-
+        elif selected_chart == "Pie chart":
+            fig, ax = plt.subplots()
+            ax.pie(df.iloc[:, 1], labels=df.iloc[:, 0], autopct="%1.1f%%")
+            ax.axis("equal")
+            st.pyplot(fig)
+        elif selected_chart == "Seaborn Bar chart":
+            fig, ax = plt.subplots()
+            sns.barplot(x=df.columns[0], y=df.columns[1], data=df, ax=ax)
+            ax.set_xlabel(df.columns[0])
+            ax.set_ylabel(df.columns[1])
+            st.pyplot(fig)
+        elif selected_chart == "Heatmap":
+            fig, ax = plt.subplots()
+            sns.heatmap(df.set_index(df.columns[0]), annot=True, fmt="g", cmap="YlGnBu", ax=ax)
+            st.pyplot(fig)
+if st.button("⬅️ Back to Home"):
+    st.switch_page("app.py")  # or the page you use for providers.py
+    st.rerun()
 st.markdown("---")

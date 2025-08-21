@@ -15,6 +15,8 @@ if "active_page" not in st.session_state:
 # ---------------- CUSTOM CSS ----------------
 st.markdown("""
     <style>
+            
+        
         /* Center-align button container */
         .center-container {
             display: flex;
@@ -66,7 +68,7 @@ def register_receiver():
                     st.error("⚠️ Please fill all required fields!")
 
                 elif not receiver_id.isdigit():
-                    st.error("⚠️ Food ID must contain digits only!")
+                    st.error("⚠️ Receiver ID must contain digits only!")
                     st.stop()
         
                 else:
