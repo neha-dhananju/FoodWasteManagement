@@ -62,7 +62,7 @@ st.markdown(
     <div class="button-container">
         <a class="round-button" href=/New_provider>🆕 New Provider</a>
         <a class="round-button" href="Existing_provider">🔑 Existing Provider</a>
-        <a class="round-button" href="/app">⬅️ Back to Home</a>
+        <a class="round-button" href="/">⬅️ Back to Home</a>
     </div>
     """,
     unsafe_allow_html=True,
