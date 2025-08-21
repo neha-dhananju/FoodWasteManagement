@@ -97,6 +97,7 @@ st.markdown("""
 <div class="role-container">
     <a class="role-button" href="/Providers">Provider</a>
     <a class="role-button" href="/Receivers">Receiver</a>
+    <a class="role-button" href="/Visualization">📊 Data Visualization</a>
 </div>
 """, unsafe_allow_html=True)
 

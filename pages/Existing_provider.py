@@ -179,7 +179,7 @@ elif st.session_state.page == "account":
     st.write("### 🏢 Provider Details")
     with st.expander("✏️ Update Provider Details", expanded=False):
         new_name = st.text_input("Name", provider["Name"])
-        new_type = st.selectbox("Type", ["Restaurant", "NGO", "Individual"], index=["Restaurant", "NGO", "Individual"].index(provider["Type"]))
+        new_type = st.selectbox("Type", ["Restaurant", "Supermarket", "Grocery Store", "Catering Service", "Other"], index=["Restaurant", "Supermarket", "Grocery Store", "Catering Service", "Other"].index(provider["Type"]))
         new_address = st.text_input("Address", provider["Address"])
         new_city = st.text_input("City", provider["City"])
         new_contact = st.text_input("Contact", provider["Contact"])
@@ -215,11 +215,14 @@ elif st.session_state.page == "account":
             if food_name.strip() == "":
                 st.error("⚠️ Food Name cannot be empty!")
             else:
-                db.add_food_listing(food_id, food_name, food_quantity, expiry_date, location, food_type, meal_type,provider["Provider_ID"],)
-                st.success(f"🍽️ '{food_name}' added successfully!")
-                time.sleep(1.5)
-                st.rerun()
-
+                result=db.add_food_listing(food_id, food_name, food_quantity, expiry_date, location, food_type, meal_type,provider["Provider_ID"],)
+                if result["success"]:
+                    st.success(f"🍽️ '{food_name}' added successfully!")
+                    time.sleep(1.5)
+                    st.rerun()
+                else:
+                    st.error(result["error"])
+            
     st.markdown("---")
 
     # ------------------------
@@ -260,7 +263,7 @@ elif st.session_state.page == "account":
                 if st.button(f"🗑️ Delete {food['Food_Name']}", key=f"del_{food['Food_ID']}"):
                     db.delete_food(food["Food_ID"])
                     st.success(f"✅ '{food['Food_Name']}' deleted successfully!")
-                    st.experimental_rerun()
+                    st.rerun()
 
     st.markdown("---")
 

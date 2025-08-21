@@ -91,3 +91,164 @@ def get_top_receivers_by_claims():
     return query
 
 
+## What is the total quantity of food available from all providers?
+
+def get_total_available_food():
+    query = """
+        SELECT 
+            SUM(Available_Quantity) AS total_available_food
+        FROM 
+            food_listings;
+    """
+    return query
+
+
+## Which city has the highest number of food listings?
+def get_city_with_highest_food_listings():
+    query = """
+        SELECT 
+            Location AS city,
+            COUNT(*) AS total_listings
+        FROM 
+            food_listings
+        GROUP BY 
+            Location
+        ORDER BY 
+            total_listings DESC
+        LIMIT 1;
+    """
+    return query
+
+
+## What are the most commonly available food types?
+def get_most_common_food_types():
+    query = """
+        SELECT 
+            Food_Type,
+            COUNT(*) AS total_items
+        FROM 
+            food_listings
+        GROUP BY 
+            Food_Type
+        ORDER BY 
+            total_items DESC;
+    """
+    return query
+
+## How many food claims have been made for each food item?
+def get_food_claims_per_item():
+    query = """
+        SELECT 
+            fl.Food_ID,
+            fl.Food_Name,
+            COUNT(c.Claim_ID) AS total_claims
+        FROM 
+            food_listings AS fl
+        LEFT JOIN 
+            claims AS c
+        ON 
+            fl.Food_ID = c.Food_ID
+        GROUP BY 
+            fl.Food_ID, fl.Food_Name
+        ORDER BY 
+            total_claims DESC;
+    """
+    return query
+
+
+## Which provider has had the highest number of successful food claims?
+def get_top_successful_provider():
+    query = """
+        SELECT 
+            p.Provider_ID,
+            p.Name AS Provider_Name,
+            COUNT(c.Claim_ID) AS successful_claims
+        FROM 
+            claims AS c
+        INNER JOIN 
+            food_listings AS fl
+            ON c.Food_ID = fl.Food_ID
+        INNER JOIN 
+            providers AS p
+            ON fl.Provider_ID = p.Provider_ID
+        WHERE 
+            c.Status = 'Successful'
+        GROUP BY 
+            p.Provider_ID, p.Name
+        ORDER BY 
+            successful_claims DESC
+        LIMIT 1;
+    """
+    return query
+
+
+##  What percentage of food claims are completed vs. pending vs. canceled?
+def get_claim_status_percentage():
+    query = """
+        SELECT 
+            Status,
+            COUNT(*) AS total_claims,
+            ROUND((COUNT(*) * 100.0 / (SELECT COUNT(*) FROM claims)), 2) AS percentage
+        FROM 
+            claims
+        GROUP BY 
+            Status;
+    """
+    return query
+
+
+
+##  What is the average quantity of food claimed per receiver?
+def get_avg_claimed_quantity_per_receiver():
+    query = """
+        SELECT 
+            r.Receiver_ID,
+            r.Name AS Receiver_Name,
+            ROUND(AVG(c.Claimed_Quantity), 2) AS avg_claimed_quantity
+        FROM 
+            claims c
+        JOIN 
+            receivers r ON c.Receiver_ID = r.Receiver_ID
+        GROUP BY 
+            r.Receiver_ID, r.Name
+        ORDER BY 
+            avg_claimed_quantity DESC;
+    """
+    return query
+
+## Which meal type (breakfast, lunch, dinner, snacks) is claimed the most?
+def get_most_claimed_meal_type():
+    query = """
+        SELECT 
+            f.Meal_Type,
+            SUM(c.Claimed_Quantity) AS total_claimed_quantity
+        FROM 
+            claims c
+        JOIN 
+            food_listings f ON c.Food_ID = f.Food_ID
+        GROUP BY 
+            f.Meal_Type
+        ORDER BY 
+            total_claimed_quantity DESC
+        LIMIT 1;
+    """
+    return query
+
+
+## What is the total quantity of food donated by each provider?
+def get_total_donated_by_provider():
+    query = """
+        SELECT 
+            p.Provider_ID,
+            p.Name AS Provider_Name,
+            SUM(f.Quantity) AS total_donated_quantity
+        FROM 
+            food_listings f
+        JOIN 
+            providers p ON f.Provider_ID = p.Provider_ID
+        GROUP BY 
+            p.Provider_ID, p.Name
+        ORDER BY 
+            total_donated_quantity DESC;
+    """
+    return query
