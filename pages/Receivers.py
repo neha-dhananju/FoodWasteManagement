@@ -2,8 +2,10 @@ import streamlit as st
 import pandas as pd
 import db  # our database file
 from datetime import datetime
+from utils import hide_sidebar
 
 st.set_page_config(page_title="Receivers Portal", page_icon="🥗", layout="wide")
+hide_sidebar()
 
 if "receiver" not in st.session_state:
     st.session_state.receiver = None
@@ -43,25 +45,41 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+if "receiver_registered" not in st.session_state:
+    st.session_state.receiver_registered = False
+
 # ---------------- REGISTER ----------------
 def register_receiver():
     st.subheader("📝 Register as Receiver")
-    receiver_id = st.text_input("Receiver ID")
-    name = st.text_input("Receiver Name")
-    r_type = st.selectbox("Receiver Type", ["NGO", "Individual", "Orphanage", "Other"])
-    city = st.text_input("City")
-    contact = st.text_input("Contact Number")
 
-    if st.button("Register ✅"):
-        if receiver_id.strip() == "" or name.strip() == "" or contact.strip() == "":
-            st.error("⚠️ Please fill all required fields!")
-        else:
-            result = db.add_receiver(receiver_id, name, r_type, city, contact)
-            if result["success"]:
-                st.success("🎉 Registered successfully! Please login now.")
-            else:
-                st.error(result["error"])
+    if not st.session_state.receiver_registered:
+        with st.form("receiver_form"):
+            receiver_id = st.text_input("Receiver ID")
+            name = st.text_input("Receiver Name")
+            r_type = st.selectbox("Receiver Type", ["NGO", "Individual", "Orphanage", "Other"])
+            city = st.text_input("City")
+            contact = st.text_input("Contact Number")
+        
+            submit = st.form_submit_button("Register ✅")
+            if submit:
+                if receiver_id.strip() == "" or name.strip() == "" or contact.strip() == "":
+                    st.error("⚠️ Please fill all required fields!")
 
+                elif not receiver_id.isdigit():
+                    st.error("⚠️ Food ID must contain digits only!")
+                    st.stop()
+        
+                else:
+                    result = db.add_receiver(receiver_id, name, r_type, city, contact)
+                    if result.get("success", False):
+                        st.session_state.receiver_registered = True  # set flag
+                        st.success("🎉 Registered successfully! Please login now.")
+                        st.rerun() 
+                    else:
+                        st.error(result.get("error", "⚠️ Something went wrong."))
+                    
+    else:
+        st.success("🎉 Registered successfully! Please login now.")
 # ---------------- LOGIN ----------------
 def login_receiver():
     st.subheader("🔐 Receiver Login")
@@ -256,9 +274,7 @@ else:
     with col2:
         if st.button("📝 Register", use_container_width=True):
             st.session_state.auth_tab = "Register"
-    if st.button("🏠 Back to Home", use_container_width=True):
-        st.switch_page("app.py")  # Navigate back to home page
-
+    
     if "auth_tab" not in st.session_state:
         st.session_state.auth_tab = "Login"
 
@@ -266,3 +282,5 @@ else:
         login_receiver()
     else:
         register_receiver()
+    if st.button("🏠 Back to Home", use_container_width=True):
+            st.switch_page("app.py")
