@@ -26,9 +26,6 @@ def go_to(page):
 if st.session_state.page == "login":
     st.title("🔑 Provider Login")
 
-    
-
-
     provider_id = st.text_input("Provider ID")
     contact = st.text_input("Contact Number")
 
