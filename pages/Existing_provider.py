@@ -158,7 +158,7 @@ elif st.session_state.page == "receivers":
                     new_status = st.selectbox(
                         f"Select new status for {r['Receiver_Name']} (Claim ID: {r['Claim_ID']})",
                         options=["Pending", "Completed", "Cancelled"],
-                        index=["Pending", "Approved", "Rejected"].index(r["Status"])
+                        index=["Pending", "Completed", "Cancelled"].index(r["Status"])
                     )
                     if st.button(f"Update Status - Claim ID {r['Claim_ID']}"):
                         # Update claim status and timestamp in DB
